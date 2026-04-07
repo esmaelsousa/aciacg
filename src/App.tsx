@@ -335,7 +335,7 @@ const App = () => {
     doc.setFillColor(248, 250, 252);
     doc.rect(14, 38, 182, 35, 'F');
     doc.setTextColor(0);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text('Abertura do Período:', 20, 45);
     doc.text(`R$ ${balance.initial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 70, 45);
     
@@ -345,7 +345,7 @@ const App = () => {
     doc.text('Total de Saídas:', 20, 59);
     doc.text(`R$ ${balance.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 70, 59);
 
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('SALDO FINAL REAL:', 130, 55);
     doc.text(`R$ ${balance.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 165, 55);
 

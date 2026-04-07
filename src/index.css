@@ -71,13 +71,14 @@ body {
   
   .filters-bar {
     padding: 1rem;
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
+    display: flex !important;
+    flex-direction: column;
+    gap: 1.2rem;
   }
 
-  .filters-bar > div:not(.date-filter) {
-    grid-column: span 2;
+  .filters-bar > div {
+    grid-column: span 1 !important;
+    width: 100%;
   }
 
   .table-responsive {

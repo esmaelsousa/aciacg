@@ -489,7 +489,7 @@ const App = () => {
 
   return (
     <div className="dashboard-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+      <header className="main-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
           <h1 style={{ fontSize: '2.2rem', color: 'var(--primary)', display: 'flex', gap: '0.8rem', alignItems: 'center', fontWeight: 800 }}>
             <Wallet size={36} /> Amigos do Lar
@@ -499,7 +499,7 @@ const App = () => {
             {user && <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700 }}>{user.role}</span>}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
           <button onClick={handleExportPayables} className="btn" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', border: '1px solid var(--warning)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <Calendar size={18} /> Contas a Pagar
           </button>
@@ -514,17 +514,17 @@ const App = () => {
 
       {/* BARRA DE FILTROS */}
       <section className="filters-bar" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-        <div style={{ flex: 1, minWidth: '150px' }}>
+        <div className="date-filter" style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>MÊS REFERÊNCIA</label>
           <input type="month" value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setStartDateFilter(''); setEndDateFilter(''); }} className="btn" style={{ width: '100%', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }} />
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
+        <div className="date-filter" style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>INÍCIO PERÍODO</label>
           <input type="date" value={startDateFilter} onChange={e => setStartDateFilter(e.target.value)} className="btn" style={{ width: '100%', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }} />
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
+        <div className="date-filter" style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>FIM PERÍODO</label>
           <input type="date" value={endDateFilter} onChange={e => setEndDateFilter(e.target.value)} className="btn" style={{ width: '100%', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }} />
         </div>

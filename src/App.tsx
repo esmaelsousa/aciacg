@@ -34,6 +34,9 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{username: string, role: string} | null>(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [signUpForm, setSignUpForm] = useState({ username: '', password: '', confirmPassword: '' });
+  const [signUpError, setSignUpError] = useState('');
 
   // Filtros
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -64,19 +67,74 @@ const App = () => {
     }
   }, [selectedMonth, startDateFilter, endDateFilter, selectedCategory, typeFilter, search, isLoggedIn]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const users = [
-      { username: 'office', password: '@820439', role: 'Escritório' },
-      { username: 'financeiro', password: 'ACICG820439', role: 'Financeiro' }
-    ];
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', loginForm.username)
+        .eq('password', loginForm.password)
+        .single();
 
-    const found = users.find(u => u.username === loginForm.username && u.password === loginForm.password);
-    if (found) {
-      setUser({ username: found.username, role: found.role });
-      setIsLoggedIn(true);
-    } else {
+      if (data) {
+        setUser({ username: data.username, role: data.role });
+        setIsLoggedIn(true);
+      } else {
+        alert("Usuário ou senha inválidos!");
+      }
+    } catch (err) {
       alert("Usuário ou senha inválidos!");
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignUpError('');
+
+    if (!signUpForm.username.trim()) {
+      setSignUpError('Nome de usuário é obrigatório');
+      return;
+    }
+    if (signUpForm.username.length < 3) {
+      setSignUpError('Nome de usuário deve ter pelo menos 3 caracteres');
+      return;
+    }
+    if (!signUpForm.password) {
+      setSignUpError('Senha é obrigatória');
+      return;
+    }
+    if (signUpForm.password.length < 6) {
+      setSignUpError('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    if (signUpForm.password !== signUpForm.confirmPassword) {
+      setSignUpError('As senhas não coincidem');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('users').insert([{
+        username: signUpForm.username,
+        password: signUpForm.password,
+        role: 'Usuário'
+      }]);
+
+      if (error) {
+        if (error.message.includes('duplicate')) {
+          setSignUpError('Este nome de usuário já existe');
+        } else {
+          setSignUpError('Erro ao criar conta. Tente novamente.');
+        }
+        return;
+      }
+
+      alert('Conta criada com sucesso! Faça login.');
+      setIsSignUpMode(false);
+      setSignUpForm({ username: '', password: '', confirmPassword: '' });
+      setLoginForm({ username: signUpForm.username, password: '' });
+    } catch (err) {
+      setSignUpError('Erro ao criar conta');
     }
   };
 
@@ -458,30 +516,77 @@ const App = () => {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', padding: '2rem' }}>
         <div className="card" style={{ width: '100%', maxWidth: '400px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
           <h1 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontWeight: 800, fontSize: '2rem' }}>ACICG CAPIM GROSSO</h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>Acesso Restrito</p>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <input 
-              type="text" 
-              placeholder="Usuário" 
-              className="btn" 
-              style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
-              value={loginForm.username}
-              onChange={e => setLoginForm({...loginForm, username: e.target.value})}
-              required
-            />
-            <input 
-              type="password" 
-              placeholder="Senha" 
-              className="btn" 
-              style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
-              value={loginForm.password}
-              onChange={e => setLoginForm({...loginForm, password: e.target.value})}
-              required
-            />
-            <button type="submit" className="btn" style={{ background: 'var(--primary)', color: 'white', fontWeight: 700, marginTop: '1rem', padding: '1rem' }}>
-              ENTRAR NO SISTEMA
-            </button>
-          </form>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>{isSignUpMode ? 'Criar Nova Conta' : 'Acesso Restrito'}</p>
+
+          {isSignUpMode ? (
+            <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {signUpError && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.8rem', borderRadius: '0.6rem', fontSize: '0.85rem', fontWeight: 500 }}>
+                  {signUpError}
+                </div>
+              )}
+              <input
+                type="text"
+                placeholder="Nome de usuário"
+                className="btn"
+                style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
+                value={signUpForm.username}
+                onChange={e => setSignUpForm({...signUpForm, username: e.target.value})}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Senha (mín. 6 caracteres)"
+                className="btn"
+                style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
+                value={signUpForm.password}
+                onChange={e => setSignUpForm({...signUpForm, password: e.target.value})}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Confirmar senha"
+                className="btn"
+                style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
+                value={signUpForm.confirmPassword}
+                onChange={e => setSignUpForm({...signUpForm, confirmPassword: e.target.value})}
+                required
+              />
+              <button type="submit" className="btn" style={{ background: 'var(--primary)', color: 'white', fontWeight: 700, padding: '1rem' }}>
+                CRIAR CONTA
+              </button>
+              <button type="button" onClick={() => { setIsSignUpMode(false); setSignUpError(''); }} className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.8rem' }}>
+                Voltar ao Login
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input
+                type="text"
+                placeholder="Usuário"
+                className="btn"
+                style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
+                value={loginForm.username}
+                onChange={e => setLoginForm({...loginForm, username: e.target.value})}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Senha"
+                className="btn"
+                style={{ width: '100%', background: '#1e293b', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}
+                value={loginForm.password}
+                onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                required
+              />
+              <button type="submit" className="btn" style={{ background: 'var(--primary)', color: 'white', fontWeight: 700, marginTop: '1rem', padding: '1rem' }}>
+                ENTRAR NO SISTEMA
+              </button>
+              <button type="button" onClick={() => setIsSignUpMode(true)} className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.8rem' }}>
+                Criar Conta
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );

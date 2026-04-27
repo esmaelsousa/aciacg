@@ -68,7 +68,7 @@ const App = () => {
     e.preventDefault();
     const users = [
       { username: 'office', password: '@820439', role: 'Escritório' },
-      { username: 'financeiro', password: 'Amigos820439', role: 'Financeiro' }
+      { username: 'financeiro', password: 'ACICG820439', role: 'Financeiro' }
     ];
 
     const found = users.find(u => u.username === loginForm.username && u.password === loginForm.password);
@@ -324,7 +324,7 @@ const App = () => {
     // Layout do Extrato
     doc.setFontSize(18);
     doc.setTextColor(16, 185, 129);
-    doc.text('Amigos do Lar - Extrato Bancário', 14, 20);
+    doc.text('ASSOCIACAO COMERCIAL E INDUSTRIAL DE CAPIM GROSSO - Extrato Bancário', 14, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -397,7 +397,7 @@ const App = () => {
     if (finalY < 270) {
       doc.setDrawColor(200);
       doc.line(14, finalY, 100, finalY);
-      doc.text('Responsável Financeiro - Amigos do Lar', 14, finalY + 5);
+      doc.text('Responsável Financeiro - ASSOCIACAO COMERCIAL E INDUSTRIAL DE CAPIM GROSSO', 14, finalY + 5);
     }
 
     doc.save(`Extrato_financeiro_${selectedMonth}.pdf`);
@@ -411,7 +411,7 @@ const App = () => {
     
     doc.setFontSize(18);
     doc.setTextColor(245, 158, 11); // Laranja para Contas a Pagar
-    doc.text('Amigos do Lar - Relatório de Contas a Pagar', 14, 20);
+    doc.text('ASSOCIACAO COMERCIAL E INDUSTRIAL DE CAPIM GROSSO - Relatório de Contas a Pagar', 14, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -457,7 +457,7 @@ const App = () => {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', padding: '2rem' }}>
         <div className="card" style={{ width: '100%', maxWidth: '400px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-          <h1 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontWeight: 800, fontSize: '2rem' }}>AMIGOS DO LAR</h1>
+          <h1 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontWeight: 800, fontSize: '2rem' }}>ACICG CAPIM GROSSO</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>Acesso Restrito</p>
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <input 
@@ -492,10 +492,10 @@ const App = () => {
       <header className="main-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
           <h1 style={{ fontSize: '2.2rem', color: 'var(--primary)', display: 'flex', gap: '0.8rem', alignItems: 'center', fontWeight: 800 }}>
-            <Wallet size={36} /> Amigos do Lar
+            <Wallet size={36} /> ACICG Capim Grosso
           </h1>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', marginTop: '0.5rem' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Centro de Apoio e Solidariedade</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Associação Comercial e Industrial</p>
             {user && <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700 }}>{user.role}</span>}
           </div>
         </div>

@@ -29,7 +29,11 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'Usuário' });
+  const [userError, setUserError] = useState('');
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{username: string, role: string} | null>(null);
@@ -64,6 +68,7 @@ const App = () => {
     if (isLoggedIn) {
       fetchTransactions();
       fetchCategories();
+      fetchUsers();
     }
   }, [selectedMonth, startDateFilter, endDateFilter, selectedCategory, typeFilter, search, isLoggedIn]);
 
@@ -141,6 +146,57 @@ const App = () => {
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*').order('name');
     if (data) setCategories(data);
+  };
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+    if (data) setUsers(data);
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUserError('');
+
+    if (!newUser.username.trim()) {
+      setUserError('Nome de usuário é obrigatório');
+      return;
+    }
+    if (newUser.username.length < 3) {
+      setUserError('Nome de usuário deve ter pelo menos 3 caracteres');
+      return;
+    }
+    if (!newUser.password) {
+      setUserError('Senha é obrigatória');
+      return;
+    }
+    if (newUser.password.length < 6) {
+      setUserError('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('users').insert([newUser]);
+      if (error) {
+        if (error.message.includes('duplicate')) {
+          setUserError('Este nome de usuário já existe');
+        } else {
+          setUserError('Erro ao criar usuário');
+        }
+        return;
+      }
+      setNewUser({ username: '', password: '', role: 'Usuário' });
+      fetchUsers();
+      alert('Usuário criado com sucesso!');
+    } catch (err) {
+      setUserError('Erro ao criar usuário');
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (window.confirm('Deseja realmente deletar este usuário?')) {
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (!error) fetchUsers();
+    }
   };
 
   const getDates = () => {
@@ -605,6 +661,9 @@ const App = () => {
           </div>
         </div>
         <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
+          <button onClick={() => setIsUserModalOpen(true)} className="btn" style={{ background: 'rgba(147, 51, 234, 0.1)', color: '#a78bfa', border: '1px solid #a78bfa', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Package size={18} /> Usuários
+          </button>
           <button onClick={handleExportPayables} className="btn" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', border: '1px solid var(--warning)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <Calendar size={18} /> Contas a Pagar
           </button>
@@ -926,6 +985,61 @@ const App = () => {
                 const { error } = await supabase.from('categories').insert([newCat]);
                 if(!error) { setNewCat({ name: '', type: 'EXPENSE' }); fetchCategories(); }
               }}>ADICIONAR CATEGORIA</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: GERENCIAR USUÁRIOS */}
+      {isUserModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(8px)' }}>
+          <div className="card" style={{ width: '500px', maxWidth: '90%', background: '#1e293b', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Gerenciar Usuários</h3>
+              <button onClick={() => setIsUserModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+            </div>
+
+            {/* Lista de usuários */}
+            <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '0.8rem' }}>
+              {users.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum usuário cadastrado</p>
+              ) : (
+                users.map(u => (
+                  <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#0f172a', borderRadius: '0.6rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600 }}>{u.username}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.role}</div>
+                    </div>
+                    <button onClick={() => handleDeleteUser(u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', opacity: 0.6 }} title="Deletar">
+                      <LogOut size={18} style={{ transform: 'rotate(90deg)' }} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Criar novo usuário */}
+            <div style={{ padding: '1.5rem', background: '#0f172a', borderRadius: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '1px', margin: 0 }}>NOVO USUÁRIO</p>
+
+              {userError && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.6rem', borderRadius: '0.4rem', fontSize: '0.8rem' }}>
+                  {userError}
+                </div>
+              )}
+
+              <input type="text" placeholder="Nome de usuário (mín. 3 caracteres)" value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} style={{ padding: '0.8rem', background: '#1e293b', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', fontSize: '0.9rem' }} />
+
+              <input type="password" placeholder="Senha (mín. 6 caracteres)" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} style={{ padding: '0.8rem', background: '#1e293b', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', fontSize: '0.9rem' }} />
+
+              <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} style={{ padding: '0.8rem', background: '#1e293b', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', fontSize: '0.9rem' }}>
+                <option value="Usuário">Usuário</option>
+                <option value="Escritório">Escritório</option>
+                <option value="Financeiro">Financeiro</option>
+                <option value="Admin">Admin</option>
+              </select>
+
+              <button onClick={handleAddUser} className="btn" style={{ background: 'var(--primary)', fontWeight: 800, padding: '0.8rem' }}>CRIAR USUÁRIO</button>
             </div>
           </div>
         </div>

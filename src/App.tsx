@@ -66,6 +66,9 @@ const App = () => {
   
   const [newCat, setNewCat] = useState({ name: '', type: 'EXPENSE' });
   const [importedData, setImportedData] = useState<any[]>([]);
+  const [editingCat, setEditingCat] = useState<any>(null);
+  const [editCatForm, setEditCatForm] = useState({ name: '', type: 'EXPENSE' });
+  const [catError, setCatError] = useState('');
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -149,6 +152,55 @@ const App = () => {
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*').order('name');
     if (data) setCategories(data);
+  };
+
+  const handleEditCategory = (cat: any) => {
+    setEditingCat(cat);
+    setEditCatForm({ name: cat.name, type: cat.type });
+    setCatError('');
+  };
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCatError('');
+
+    if (!editCatForm.name.trim()) {
+      setCatError('Nome da categoria é obrigatório');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({ name: editCatForm.name, type: editCatForm.type })
+        .eq('id', editingCat.id);
+
+      if (error) {
+        if (error.message.includes('duplicate')) {
+          setCatError('Esta categoria já existe');
+        } else {
+          setCatError('Erro ao salvar categoria');
+        }
+        return;
+      }
+
+      setEditingCat(null);
+      fetchCategories();
+      alert('Categoria atualizada com sucesso!');
+    } catch (err) {
+      setCatError('Erro ao salvar categoria');
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (window.confirm(`Deseja realmente deletar a categoria "${name}"?`)) {
+      const { error } = await supabase.from('categories').delete().eq('id', id);
+      if (!error) {
+        fetchCategories();
+      } else {
+        alert('Erro ao deletar categoria');
+      }
+    }
   };
 
   const fetchUsers = async () => {
@@ -1012,10 +1064,20 @@ const App = () => {
             <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {categories.map(c => (
                 <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#0f172a', borderRadius: '0.8rem' }}>
-                  <span style={{ fontWeight: 500 }}>{c.name}</span>
-                  <span style={{ fontSize: '0.6rem', padding: '0.3rem 0.7rem', borderRadius: '1rem', fontWeight: 800, background: c.type === 'INCOME' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: c.type === 'INCOME' ? 'var(--primary)' : 'var(--danger)' }}>
-                    {c.type === 'INCOME' ? 'RECEITA' : 'DESPESA'}
-                  </span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 500 }}>{c.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.6rem', padding: '0.3rem 0.7rem', borderRadius: '1rem', fontWeight: 800, background: c.type === 'INCOME' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: c.type === 'INCOME' ? 'var(--primary)' : 'var(--danger)' }}>
+                      {c.type === 'INCOME' ? 'RECEITA' : 'DESPESA'}
+                    </span>
+                    <button onClick={() => handleEditCategory(c)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', opacity: 0.6, padding: '0.3rem' }} title="Editar">
+                      <FileText size={16} />
+                    </button>
+                    <button onClick={() => handleDeleteCategory(c.id, c.name)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', opacity: 0.6, padding: '0.3rem' }} title="Deletar">
+                      <LogOut size={16} style={{ transform: 'rotate(90deg)' }} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1033,6 +1095,44 @@ const App = () => {
                 if(!error) { setNewCat({ name: '', type: 'EXPENSE' }); fetchCategories(); }
               }}>ADICIONAR CATEGORIA</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDITAR CATEGORIA */}
+      {editingCat && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(8px)' }}>
+          <div className="card" style={{ width: '400px', maxWidth: '90%', background: '#1e293b', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Editar Categoria</h3>
+              <button onClick={() => setEditingCat(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+            </div>
+
+            <form onSubmit={handleSaveCategory} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {catError && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.6rem', borderRadius: '0.4rem', fontSize: '0.8rem' }}>
+                  {catError}
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.4rem' }}>NOME DA CATEGORIA</label>
+                <input type="text" value={editCatForm.name} onChange={e => setEditCatForm({...editCatForm, name: e.target.value})} style={{ padding: '0.8rem', background: '#0f172a', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', width: '100%' }} required />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.4rem' }}>TIPO</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button type="button" onClick={() => setEditCatForm({...editCatForm, type: 'INCOME'})} style={{ flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', background: editCatForm.type === 'INCOME' ? 'var(--primary)' : '#334155', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Receita</button>
+                  <button type="button" onClick={() => setEditCatForm({...editCatForm, type: 'EXPENSE'})} style={{ flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', background: editCatForm.type === 'EXPENSE' ? 'var(--danger)' : '#334155', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Despesa</button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setEditingCat(null)} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}>CANCELAR</button>
+                <button type="submit" className="btn" style={{ flex: 1, background: 'var(--primary)', fontWeight: 800 }}>SALVAR</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

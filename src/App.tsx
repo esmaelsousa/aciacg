@@ -34,6 +34,9 @@ const App = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'Usuário' });
   const [userError, setUserError] = useState('');
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ role: '', newPassword: '' });
+  const [editError, setEditError] = useState('');
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{username: string, role: string} | null>(null);
@@ -196,6 +199,50 @@ const App = () => {
     if (window.confirm('Deseja realmente deletar este usuário?')) {
       const { error } = await supabase.from('users').delete().eq('id', id);
       if (!error) fetchUsers();
+    }
+  };
+
+  const handleEditUser = (user: any) => {
+    setEditingUser(user);
+    setEditForm({ role: user.role, newPassword: '' });
+    setEditError('');
+  };
+
+  const handleSaveUserEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError('');
+
+    if (!editForm.role) {
+      setEditError('Perfil é obrigatório');
+      return;
+    }
+
+    try {
+      const updateData: any = { role: editForm.role };
+
+      if (editForm.newPassword) {
+        if (editForm.newPassword.length < 6) {
+          setEditError('Nova senha deve ter pelo menos 6 caracteres');
+          return;
+        }
+        updateData.password = editForm.newPassword;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', editingUser.id);
+
+      if (error) {
+        setEditError('Erro ao atualizar usuário');
+        return;
+      }
+
+      setEditingUser(null);
+      fetchUsers();
+      alert('Usuário atualizado com sucesso!');
+    } catch (err) {
+      setEditError('Erro ao atualizar usuário');
     }
   };
 
@@ -1010,9 +1057,14 @@ const App = () => {
                       <div style={{ fontWeight: 600 }}>{u.username}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.role}</div>
                     </div>
-                    <button onClick={() => handleDeleteUser(u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', opacity: 0.6 }} title="Deletar">
-                      <LogOut size={18} style={{ transform: 'rotate(90deg)' }} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={() => handleEditUser(u)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', opacity: 0.7 }} title="Editar">
+                        <FileText size={18} />
+                      </button>
+                      <button onClick={() => handleDeleteUser(u.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', opacity: 0.6 }} title="Deletar">
+                        <LogOut size={18} style={{ transform: 'rotate(90deg)' }} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -1041,6 +1093,53 @@ const App = () => {
 
               <button onClick={handleAddUser} className="btn" style={{ background: 'var(--primary)', fontWeight: 800, padding: '0.8rem' }}>CRIAR USUÁRIO</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDITAR USUÁRIO */}
+      {editingUser && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(8px)' }}>
+          <div className="card" style={{ width: '400px', maxWidth: '90%', background: '#1e293b', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Editar Usuário</h3>
+              <button onClick={() => setEditingUser(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+            </div>
+
+            <form onSubmit={handleSaveUserEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {editError && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.6rem', borderRadius: '0.4rem', fontSize: '0.8rem' }}>
+                  {editError}
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.4rem' }}>USUÁRIO</label>
+                <input type="text" value={editingUser.username} disabled style={{ padding: '0.8rem', background: '#0f172a', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', width: '100%' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.4rem' }}>PERFIL</label>
+                <select value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})} style={{ padding: '0.8rem', background: '#0f172a', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', width: '100%' }} required>
+                  <option value="">Selecione um perfil</option>
+                  <option value="Usuário">Usuário</option>
+                  <option value="Escritório">Escritório</option>
+                  <option value="Financeiro">Financeiro</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.4rem' }}>NOVA SENHA (opcional)</label>
+                <input type="password" placeholder="Deixe vazio para não alterar" value={editForm.newPassword} onChange={e => setEditForm({...editForm, newPassword: e.target.value})} style={{ padding: '0.8rem', background: '#0f172a', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', width: '100%' }} />
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>Mínimo 6 caracteres</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setEditingUser(null)} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}>CANCELAR</button>
+                <button type="submit" className="btn" style={{ flex: 1, background: 'var(--primary)', fontWeight: 800 }}>SALVAR</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

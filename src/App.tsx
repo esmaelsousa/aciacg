@@ -413,7 +413,7 @@ const App = () => {
     setFormData({
       type: 'EXPENSE',
       status: 'PAID',
-      amount: 0,
+      amount: undefined,
       date: new Date().toISOString().slice(0, 10),
       due_date: new Date().toISOString().slice(0, 10),
       description: '',
@@ -1007,7 +1007,7 @@ const App = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>VALOR (R$)</label>
-                  <input type="number" step="0.01" placeholder="0,00" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value) || 0})} style={{ padding: '0.9rem', background: '#0f172a', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.8rem', fontWeight: 800 }} required />
+                  <input type="number" step="0.01" placeholder="Digite o valor" value={formData.amount || ''} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value) || undefined})} style={{ padding: '0.9rem', background: '#0f172a', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.8rem', fontWeight: 800 }} required />
                 </div>
               </div>
 
